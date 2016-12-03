@@ -1,11 +1,11 @@
-require 'open3'
-
+require 'fileutils'
 class Interface
-  attr_accessor :url, :file_array, :checked_folders
+  attr_accessor :url, :file_array, :checked_folders, :file_list
 
   def initialize
     @url = "/Users/jgisin"
     @checked_folders = []
+    @file_list = []
     @file_array = []
   end
 
@@ -17,22 +17,24 @@ class Interface
 
   def new_folder
     Dir.chdir(@url)
-    Dir.mkdir(File.join(Dir.home, "New Folder"), 0700)
+    Dir.mkdir("New Folder")
   end
 
   def delete_folder(list)
     Dir.chdir(@url)
     @checked_folders.each do |fold|
-      Dir.delete(list[fold])
+      FileUtils.rm_rf(@url + "/" + @file_list[fold])
     end
   end
 
   def refresh_folders(list, int, app)
     list = int.get_folders(int.url)
+    @file_list = list
     int.file_array = file_list list, int, int.file_array, app
   end
 
   def open_button(app, int, l, list)
+    int.checked_folders = []
     app.link l do
       if l == ".."
         int.url = int.url.split('/')[0..-2].join('/')
