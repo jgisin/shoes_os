@@ -1,11 +1,12 @@
 require 'open3'
 
 class Interface
-  attr_accessor :url
+  attr_accessor :url, :file_array, :checked_folders
 
   def initialize
     @url = "/Users/jgisin"
     @checked_folders = []
+    @file_array = []
   end
 
   def get_folders(url = @url)
@@ -14,23 +15,52 @@ class Interface
     file_list.unshift( ".." )
   end
 
-  def open_button(app, int, l, app_array)
+  def new_folder
+    Dir.chdir(@url)
+    Dir.mkdir(File.join(Dir.home, "New Folder"), 0700)
+  end
+
+  def delete_folder(list)
+    Dir.chdir(@url)
+    @checked_folders.each do |fold|
+      Dir.delete(list[fold])
+    end
+  end
+
+  def refresh_folders(list, int, app)
+    list = int.get_folders(int.url)
+    int.file_array = file_list list, int, int.file_array, app
+  end
+
+  def open_button(app, int, l, list)
     app.link l do
       if l == ".."
         int.url = int.url.split('/')[0..-2].join('/')
-        list = int.get_folders(int.url)
-        file_list list, int, app_array, app
+        refresh_folders(list, int, app)
       else
         int.url = int.url + "/" + l
-        list = int.get_folders(int.url)
-        file_list list, int, app_array, app
+        refresh_folders(list, int, app)
       end
     end
   end
 
-  def new_folder_button(app)
+  def new_folder_button(list, int, app)
     app.button "New Folder", :stroke => app.white do
+      new_folder
+      refresh_folders(list, int, app)
+    end
+  end
 
+  def delete_folder_button(list, int, app)
+    app.button "Delete Folders", :stroke => app.white do
+      delete_folder(list)
+      refresh_folders(list, int, app)
+    end
+  end
+
+  def refresh_folder_button(list, int, app)
+    app.button "Refresh", :stroke => app.white do
+      refresh_folders(list, int, app)
     end
   end
 
@@ -52,7 +82,7 @@ class Interface
             end
           }
           app.stack(:width => 0.4) {
-            app.para "", open_button(app, int, l, app_array)
+            app.para "", open_button(app, int, l, list)
           }
         }
         app_array << app_list
@@ -70,9 +100,11 @@ class Interface
       background white
       flow(:height => 29){
         background black
-        int.new_folder_button self
+        int.new_folder_button list, int, self
+        int.delete_folder_button list, int, self
+        int.refresh_folder_button list, int, self
       }
-      int.file_list list, int, nil, self
+      int.file_array = int.file_list list, int, nil, self
     end
   end
 
