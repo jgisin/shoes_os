@@ -22,6 +22,10 @@ class Interface
     @file_list = Dir.glob('*').select {|f| !File.directory? f }
   end
 
+  def open_file(filename)
+    system("open #{filename}")
+  end
+
   def new_folder
     Dir.chdir(@url)
     Dir.mkdir("New Folder")
@@ -95,8 +99,10 @@ class Interface
       end
       app.button("Browser", :margin_top => 10) do
         folder = app.ask_open_folder
-        int.url = folder
-        refresh(int, app)
+        unless folder.nil?
+          int.url = folder
+          refresh(int, app)
+        end
       end
     }
   end
@@ -120,12 +126,18 @@ class Interface
     }
   end
 
+  def open_file_link(app, l)
+    app.link(l, :stroke => app.red) do
+      open_file(l)
+    end
+  end
+
   def file(app, l)
     app.flow {
       app.stack(:width => 0.05) {
       }
       app.stack(:width => 0.4) {
-        app.para l
+        app.para("", open_file_link(app, l))
       }
     }
   end
