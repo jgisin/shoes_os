@@ -93,6 +93,12 @@ class Interface
         refresh_folders(list, int, app)
         refresh_files(get_files, int, app)
       end
+      app.button "Browser" do
+        folder = app.ask_open_folder
+        int.url = folder
+        refresh_folders(list, int, app)
+        refresh_files(get_files, int, app)
+      end
     }
   end
 
