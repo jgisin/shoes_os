@@ -27,7 +27,7 @@ class Interface
     Dir.mkdir("New Folder")
   end
 
-  def delete_folder(list)
+  def delete_folder
     Dir.chdir(@url)
     @checked_folders.each do |fold|
       FileUtils.rm_rf(@url + "/" + @folder_list[fold])
@@ -37,72 +37,71 @@ class Interface
   def refresh_folders(list, int, app)
     list = int.get_folders(int.url)
     @folder_list = list
-    int.folder_array = render_folder_list list, int, app
+    int.folder_array = render_folder_list int, app
   end
 
   def refresh_files(list, int, app)
     list = int.get_files(int.url)
     @file_list = list
-    int.file_array = render_file_list list, int, app
+    int.file_array = render_file_list int, app
   end
 
-  def open_button(app, int, l, list)
+  def refresh(int, app)
+    refresh_folders(get_folders, int, app)
+    refresh_files(get_files, int, app)
+  end
+
+  def open_button(app, int, l)
     int.checked_folders = []
     app.link l do
       if l == ".."
         int.url = int.url.split('/')[0..-2].join('/')
-        refresh_folders(list, int, app)
-        refresh_files(get_files, int, app)
+        refresh(int, app)
       else
         int.url = int.url + "/" + l
-        refresh_folders(list, int, app)
-        refresh_files(get_files, int, app)
+        refresh(int, app)
       end
     end
   end
 
-  def new_folder_button(list, int, app)
+  def new_folder_button(int, app)
     app.button "New Folder", :stroke => app.white do
       new_folder
-      refresh_folders(list, int, app)
-      refresh_files(get_files, int, app)
+      refresh(int, app)
     end
   end
 
-  def delete_folder_button(list, int, app)
+  def delete_folder_button(int, app)
     app.button "Delete Folders", :stroke => app.white do
-      delete_folder(list)
-      refresh_folders(list, int, app)
-      refresh_files(get_files, int, app)
+      delete_folder
+      refresh(int, app)
     end
   end
 
-  def refresh_folder_button(list, int, app)
+  def refresh_folder_button(int, app)
     app.button "Refresh", :stroke => app.white do
-      refresh_folders(list, int, app)
-      refresh_files(get_files, int, app)
+      refresh(int, app)
     end
   end
 
-  def curr_path(app, int, list)
+  def curr_path(app, int)
     app.flow {
-      path = app.edit_line
+      app.background app.silver
+      path = app.edit_line(:margin_left => 10, :margin_top => 10)
       path.text = int.url
-      app.button "Go" do
+      app.button("Go", :margin_top => 10) do
         int.url = path.text
-        refresh_folders(list, int, app)
-        refresh_files(get_files, int, app)
+        refresh(int, app)
       end
-      app.button "Browser" do
+      app.button("Browser", :margin_top => 10) do
         folder = app.ask_open_folder
         int.url = folder
-        refresh_folders(list, int, app)
-        refresh_files(get_files, int, app)
+        refresh(int, app)
       end
     }
   end
 
-  def folder(app, int, l, index, list)
+  def folder(app, int, l, index)
     app.flow {
       app.stack(:width => 0.05) {
         if l != ".."
@@ -116,7 +115,7 @@ class Interface
         end
       }
       app.stack(:width => 0.4) {
-        app.para "", open_button(app, int, l, list)
+        app.para "", open_button(app, int, l)
       }
     }
   end
@@ -131,13 +130,13 @@ class Interface
     }
   end
 
-  def render_folder_list(list, int, app)
-    int.folder_array.each { |aa| aa.clear } if int.folder_array
+  def render_folder_list(int, app)
+    int.folder_array.each { |aa| aa.remove } if int.folder_array
     int.folder_array = []
-    int.folder_array << curr_path(app, int, list)
+    int.folder_array << curr_path(app, int)
     container = app.stack {
-      list.each_with_index do |l,index|
-        int.folder_array << folder(app, int, l, index, list)
+      get_folders.each_with_index do |l,index|
+        int.folder_array << folder(app, int, l, index)
       end
     }
     container.scroll_top = 0
@@ -145,29 +144,29 @@ class Interface
   end
 
 
-  def render_file_list(list, int, app)
-    int.file_array.each { |aa| aa.clear } if int.file_array
+  def render_file_list(int, app)
+    int.file_array.each { |aa| aa.remove } if int.file_array
     int.file_array = []
-    container = app.stack {
-      list.each_with_index do |l,index|
+    app.stack {
+      get_files.each_with_index do |l,index|
         int.file_array << file(app, l)
       end
     }
     int.file_array
   end
 
-  def render(folder_list = get_folders, file_list = get_files)
+  def render
     int = Interface.new
     Shoes.app do
       background white
       flow(:height => 29){
         background black
-        int.new_folder_button folder_list, int, self
-        int.delete_folder_button folder_list, int, self
-        int.refresh_folder_button folder_list, int, self
+        int.new_folder_button int, self
+        int.delete_folder_button int, self
+        int.refresh_folder_button int, self
       }
-      int.folder_array = int.render_folder_list folder_list, int, self
-      int.file_array = int.render_file_list file_list, int, self
+      int.folder_array = int.render_folder_list int, self
+      int.file_array = int.render_file_list int, self
     end
   end
 
